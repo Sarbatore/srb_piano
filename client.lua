@@ -16,7 +16,7 @@ end
 
 --- Return whether the player is near the given coordinates
 ---@return vector4
-local function NearPiano()
+local function NearestPiano()
     for _, coords in ipairs(Config.pianos) do
         if (IsPlayerNearCoords(coords)) then
             return coords
@@ -48,7 +48,7 @@ Citizen.CreateThread(function()
             Citizen.Wait(5)
         end
         
-        local piano = NearPiano()
+        local piano = NearestPiano()
         if (piano) then
             promptGroup:handleEvents(piano)
             promptGroup:setActiveThisFrame()

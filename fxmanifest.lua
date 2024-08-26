@@ -7,3 +7,8 @@ client_scripts {
 	"@uiprompt/uiprompt.lua",
 	"client.lua"
 }
+
+escrow_ignore {
+	"client.lua",
+	"config.lua",
+}
