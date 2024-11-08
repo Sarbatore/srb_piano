@@ -1,4 +1,11 @@
+local prompt = 0
 local play = false
+
+AddEventHandler("onResourceStop", function(resource)
+    if (GetCurrentResourceName() ~= resource) then return end
+
+    PromptDelete(prompt)
+end)
 
 --- Return whether the player is near the given coordinates
 ---@param x number
@@ -6,19 +13,19 @@ local play = false
 ---@param z number
 ---@return boolean
 local function IsPlayerNearCoords(x, y, z)
-    local px, py, pz = table.unpack(GetEntityCoords(PlayerPedId(), 0))
-    local distance = GetDistanceBetweenCoords(px, py, pz, x, y, z, false)
+    local pcoords = GetEntityCoords(PlayerPedId(), 0)
+    local distance = GetDistanceBetweenCoords(pcoords.x, pcoords.y, pcoords.z, x, y, z, false)
 
-    if distance <= 1 then
+    if distance <= Config.distance then
         return true
     end
 end
 
---- Return whether the player is near the given coordinates
+--- Return the nearest piano coordinates
 ---@return vector4
-local function NearestPiano()
+local function GetNearestPianoCoords()
     for _, coords in ipairs(Config.pianos) do
-        if (IsPlayerNearCoords(coords)) then
+        if (IsPlayerNearCoords(coords.x, coords.y, coords.z)) then
             return coords
         end
     end
@@ -26,36 +33,43 @@ local function NearestPiano()
 end
 
 Citizen.CreateThread(function()
-    local promptGroup = UipromptGroup:new(Config.language.piano)
-    local prompt = Uiprompt:new(0x760A9C6F, Config.language.press, promptGroup)
-        :setOnControlJustPressed(function(_, location)
-            play = not play
-
-            if (play) then
-                local scenario = IsPedMale(PlayerPedId()) and "PROP_HUMAN_PIANO" or "PROP_HUMAN_ABIGAIL_PIANO"
-                TaskStartScenarioAtPosition(PlayerPedId(), GetHashKey(scenario), location, 0, true, true, 0, true)
-
-            else
-                ClearPedTasks(PlayerPedId())
-            end
-        end)
+    local promptGroup = GetRandomIntInRange(0, 0xffffff)
+    prompt = PromptRegisterBegin()
+        UiPromptSetControlAction(prompt, Config.controlKey)
+        UiPromptSetText(prompt, VarString(10, "LITERAL_STRING", Config.language.press))
+        UiPromptSetEnabled(prompt, true)
+        UiPromptSetVisible(prompt, true)
+        UiPromptSetStandardMode(prompt, true)
+        UiPromptSetGroup(prompt, promptGroup, 0)
+	UiPromptRegisterEnd(prompt)
 
     local sleep = true
 	while true do
         if (sleep) then
             Citizen.Wait(1000)
         else
-            Citizen.Wait(5)
+            Citizen.Wait(0)
         end
-        
-        local piano = NearestPiano()
-        if (piano) then
-            promptGroup:handleEvents(piano)
-            promptGroup:setActiveThisFrame()
 
+        sleep = true
+        
+        local piano = GetNearestPianoCoords()
+        if (piano) then
             sleep = false
-        else
-            sleep = true
+
+            PromptSetActiveGroupThisFrame(promptGroup, VarString(10, "LITERAL_STRING", Config.language.piano))
+
+            if (PromptIsJustPressed(prompt)) then
+                play = not play
+
+                local playerPed = PlayerPedId()
+                if (play) then
+                    local scenario = IsPedMale(playerPed) and "PROP_HUMAN_PIANO" or "PROP_HUMAN_ABIGAIL_PIANO"
+                    TaskStartScenarioAtPosition(playerPed, joaat(scenario), piano, 0, true, true, 0, true)
+                else
+                    ClearPedTasks(playerPed)
+                end
+            end
         end
     end    
 end)
