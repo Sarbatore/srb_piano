@@ -1,5 +1,9 @@
 Config = {}
 
+Config.controlKey = 0x760A9C6F -- Key to press to play/stop the piano
+
+Config.distance = 1.0 -- Distance to interact with the piano
+
 Config.pianos = {
     vector4(-312.3, 799.01, 118.46, 102.37), -- Valentine
     vector4(2631.946 - 0.22, -1232.617 + 0.3, 54.19 - 0.46, 67.788), -- St Denis
